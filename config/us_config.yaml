@@ -1,0 +1,51 @@
+dataset: US
+raw_dir: data/raw/us
+processed_dir: data/processed/us
+seed: 42
+
+datetime_columns:
+  accident_date: "Start_Time"
+
+missing_threshold: 0.10
+near_zero_var_threshold: 0.02
+
+categorical_impute: mode
+encode: label
+
+# Indicators from Table 2 (USA)
+selected_features:
+  # Temporal
+  - year
+  - month
+  - DayOfWeek
+  - hour
+  # Spatial
+  - Start_Lat
+  - Start_Lng
+  # Environmental/road
+  - ADDRTYPE
+  - ROADCOND
+  - WEATHER
+  - JUNCTIONTYPE
+  - COLLISIONTYPE
+  # Counts/injuries
+  - VEHCOUNT
+  - PEDCOUNT
+  - PERSONCOUNT
+  - PEDCYLCOUNT
+  - SERIOUSINJURIES
+  - FATALITIES
+  - INJURIES
+  # Driver factors / others
+  - LIGHTCOND
+  - SPEEDING
+  - UNDERINFL
+  - HITPARKEDCAR
+
+segment_id_col: "Road_Segment_Id"
+period: {unit: "week"}
+
+split:
+  strategy: chronological
+  ratios: {train: 0.6, val: 0.2, test: 0.2}
+  folds: 10

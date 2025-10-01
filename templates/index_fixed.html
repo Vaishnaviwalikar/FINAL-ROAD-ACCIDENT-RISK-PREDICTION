@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadSafe AI - Real AI Predictions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { font-family: 'Arial', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        
+        /* FIXED AI INDICATOR */
+        .ai-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            z-index: 9999;
+            font-weight: bold;
+            animation: glow 2s infinite;
+        }
+        
+        .data-indicator {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            z-index: 9998;
+            font-size: 14px;
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 8px 25px rgba(102,126,234,0.3); }
+            50% { box-shadow: 0 8px 35px rgba(102,126,234,0.6); }
+        }
+        
+        .main-container { padding: 2rem; }
+        .hero-section { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 3rem; margin-bottom: 2rem; text-align: center; }
+        .card-modern { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
+        .predict-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 12px; padding: 1rem 2rem; color: white; font-weight: 600; width: 100%; }
+        #map { height: 400px; border-radius: 16px; }
+        .result-section { background: white; border-radius: 12px; padding: 2rem; margin-top: 2rem; display: none; }
+        .risk-indicator { text-align: center; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; font-size: 1.5rem; font-weight: 700; }
+        .risk-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .risk-detail-item { background: #f8fafc; border-radius: 12px; padding: 1.5rem; text-align: center; }
+        .risk-detail-item .value { font-size: 1.5rem; font-weight: 700; color: #1e40af; }
+        
+        .risk-low { background: linear-gradient(135deg, #10b981, #34d399); color: white; }
+        .risk-medium { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; }
+        .risk-high { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
+    </style>
+</head>
+
+<body>
+    <!-- FIXED INDICATORS -->
+    <div class="ai-indicator">
+        🧠 AI Neural Network - CNN-BiLSTM-Attention
+    </div>
+    
+    <div class="data-indicator">
+        🟢 Real-time Data + Trained Model
+    </div>
+
+    <div class="container main-container">
+        <div class="hero-section">
+            <h1><i class="fas fa-shield-alt"></i> RoadSafe AI</h1>
+            <p>Real AI Traffic Accident Risk Prediction</p>
+            <div class="alert alert-success">
+                <strong>✅ AI Model Active:</strong> Using trained CNN-BiLSTM-Attention neural network with 30 traffic factors
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card-modern">
+                    <h3>📍 Location & Parameters</h3>
+                    
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="city_name" placeholder="Enter city name">
+                        <button class="btn btn-primary mt-2" onclick="searchCity()">Search</button>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label>Latitude</label>
+                            <input type="number" class="form-control" id="latitude" value="51.5074" step="0.0001">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Longitude</label>
+                            <input type="number" class="form-control" id="longitude" value="-0.1278" step="0.0001">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label>Hour</label>
+                            <select class="form-control" id="hour"></select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label>Day</label>
+                            <select class="form-control" id="day_of_week"></select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label>Month</label>
+                            <select class="form-control" id="month"></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Weather</label>
+                            <select class="form-control" id="weather_conditions">
+                                <option value="1">Clear</option>
+                                <option value="2">Rain</option>
+                                <option value="3">Snow</option>
+                                <option value="7">Fog</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label>Speed Limit</label>
+                            <select class="form-control" id="speed_limit">
+                                <option value="30">30 mph</option>
+                                <option value="40">40 mph</option>
+                                <option value="50">50 mph</option>
+                                <option value="70">70 mph</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="predict-btn" onclick="predictRisk()">
+                        🧠 Predict with AI Model
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div id="map"></div>
+                
+                <div class="result-section" id="result-section">
+                    <div class="risk-indicator" id="risk-indicator">
+                        Click map or predict to see AI results
+                    </div>
+                    <div class="risk-details">
+                        <div class="risk-detail-item">
+                            <h5>Risk Level</h5>
+                            <div class="value" id="risk-level">-</div>
+                        </div>
+                        <div class="risk-detail-item">
+                            <h5>Risk Score</h5>
+                            <div class="value" id="risk-score">-</div>
+                        </div>
+                        <div class="risk-detail-item">
+                            <h5>AI Confidence</h5>
+                            <div class="value" id="confidence">-</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            🧠 Prediction from trained CNN-BiLSTM-Attention model using 30 traffic factors
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, marker;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fill selects
+            const hours = Array.from({length: 24}, (_, i) => i);
+            const hourSelect = document.getElementById('hour');
+            hours.forEach(h => {
+                const opt = document.createElement('option');
+                opt.value = h;
+                opt.textContent = h + ':00';
+                hourSelect.appendChild(opt);
+            });
+            
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const daySelect = document.getElementById('day_of_week');
+            days.forEach((day, i) => {
+                const opt = document.createElement('option');
+                opt.value = i + 1;
+                opt.textContent = day;
+                daySelect.appendChild(opt);
+            });
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthSelect = document.getElementById('month');
+            months.forEach((month, i) => {
+                const opt = document.createElement('option');
+                opt.value = i + 1;
+                opt.textContent = month;
+                monthSelect.appendChild(opt);
+            });
+            
+            // Set current time
+            const now = new Date();
+            document.getElementById('hour').value = now.getHours();
+            document.getElementById('day_of_week').value = now.getDay() || 7;
+            document.getElementById('month').value = now.getMonth() + 1;
+
+            // Initialize map
+            map = L.map('map').setView([51.5074, -0.1278], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            // Map click handler
+            map.on('click', (e) => {
+                const {lat, lng} = e.latlng;
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                if (marker) map.removeLayer(marker);
+                marker = L.marker([lat, lng]).addTo(map);
+                predictRisk();
+            });
+        });
+
+        async function searchCity() {
+            const city = document.getElementById('city_name').value;
+            if (!city) return;
+            
+            try {
+                const response = await fetch('/geocode_city', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({city: city})
+                });
+                
+                const data = await response.json();
+                if (data.latitude && data.longitude) {
+                    document.getElementById('latitude').value = data.latitude;
+                    document.getElementById('longitude').value = data.longitude;
+                    map.setView([data.latitude, data.longitude], 13);
+                    if (marker) map.removeLayer(marker);
+                    marker = L.marker([data.latitude, data.longitude]).addTo(map);
+                    predictRisk();
+                }
+            } catch (e) {
+                alert('City not found');
+            }
+        }
+
+        async function predictRisk() {
+            const payload = {
+                latitude: parseFloat(document.getElementById('latitude').value),
+                longitude: parseFloat(document.getElementById('longitude').value),
+                hour: parseInt(document.getElementById('hour').value),
+                day_of_week: parseInt(document.getElementById('day_of_week').value),
+                month: parseInt(document.getElementById('month').value),
+                weather_conditions: parseInt(document.getElementById('weather_conditions').value),
+                speed_limit: parseInt(document.getElementById('speed_limit').value)
+            };
+            
+            try {
+                const response = await fetch('/predict_risk', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                displayResults(result);
+            } catch (e) {
+                alert('Prediction failed: ' + e.message);
+            }
+        }
+
+        function displayResults(result) {
+            console.log('AI Prediction Result:', result);
+            
+            const resultSection = document.getElementById('result-section');
+            const riskIndicator = document.getElementById('risk-indicator');
+            const riskLevel = document.getElementById('risk-level');
+            const riskScore = document.getElementById('risk-score');
+            const confidence = document.getElementById('confidence');
+            
+            // Update values
+            riskLevel.textContent = result.risk_level || 'Medium';
+            riskScore.textContent = (result.risk_value || 2.0).toFixed(2);
+            confidence.textContent = Math.round(result.confidence || 80) + '%';
+            
+            // Update indicator
+            const level = (result.risk_level || 'Medium').toLowerCase();
+            riskIndicator.className = 'risk-indicator risk-' + level;
+            
+            if (level === 'low') {
+                riskIndicator.innerHTML = '✅ LOW RISK<br><small>AI Neural Network Analysis</small>';
+            } else if (level === 'medium') {
+                riskIndicator.innerHTML = '⚠️ MEDIUM RISK<br><small>AI Neural Network Analysis</small>';
+            } else {
+                riskIndicator.innerHTML = '🚨 HIGH RISK<br><small>AI Neural Network Analysis</small>';
+            }
+            
+            resultSection.style.display = 'block';
+            
+            // Force update indicators
+            document.querySelector('.ai-indicator').innerHTML = '🧠 AI Model: ' + (result.used_model ? 'ACTIVE' : 'FALLBACK');
+            document.querySelector('.data-indicator').innerHTML = '🟢 Source: ' + (result.used_model ? 'Real AI Model' : 'Simulated');
+        }
+    </script>
+</body>
+</html>

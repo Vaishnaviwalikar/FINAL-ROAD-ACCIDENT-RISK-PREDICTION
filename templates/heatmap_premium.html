@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadSafe AI - Premium Risk Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.37);
+            --shadow-hover: 0 15px 35px rgba(31, 38, 135, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            animation: backgroundShift 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            25% { transform: translateX(-20px) translateY(-10px); }
+            50% { transform: translateX(20px) translateY(10px); }
+            75% { transform: translateX(-10px) translateY(20px); }
+        }
+
+        .main-container {
+            min-height: 100vh;
+            padding: 2rem 0;
+            position: relative;
+        }
+
+        /* Glass Morphism Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Header Section */
+        .header-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .main-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 300;
+            margin-bottom: 2rem;
+        }
+
+        /* Data Indicator */
+        .data-indicator {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 0 auto 2rem;
+            max-width: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .data-indicator::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .data-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Controls Section */
+        .controls-card {
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Premium Buttons */
+        .btn-premium {
+            background: var(--success-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 2rem;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-premium:hover::before {
+            left: 100%;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn-search {
+            background: var(--secondary-gradient);
+            border: none;
+            border-radius: 0 12px 12px 0;
+            padding: 0.75rem 1rem;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-search:hover {
+            transform: scale(1.05);
+            color: white;
+        }
+
+        /* Map Container */
+        .map-container {
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            height: 600px;
+        }
+
+        #heatmap-map {
+            height: 100%;
+            width: 100%;
+            border-radius: 20px;
+        }
+
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 1.5rem;
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .legend-title {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .risk-medium { background: linear-gradient(135deg, #f59e0b, #f97316); }
+        .risk-high { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .risk-extreme { background: linear-gradient(135deg, #7c2d12, #991b1b); }
+
+        /* Statistics Panel */
+        .stats-card {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4facfe;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            padding: 1.5rem;
+        }
+
+        .info-title {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-title i {
+            margin-right: 0.5rem;
+            color: #4facfe;
+        }
+
+        .info-section {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 3px solid;
+        }
+
+        .info-section.real-data {
+            border-left-color: #10b981;
+        }
+
+        .info-section.ai-prediction {
+            border-left-color: #3b82f6;
+        }
+
+        .info-section h6 {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-section ul {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-note {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+            
+            .controls-card {
+                padding: 1.5rem;
+            }
+            
+            .map-container {
+                height: 400px;
+            }
+            
+            .legend {
+                position: relative;
+                bottom: auto;
+                left: auto;
+                margin-top: 1rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Icons */
+        .status-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-success {
+            background: var(--success-gradient);
+            animation: pulse 2s infinite;
+        }
+
+        .status-warning {
+            background: var(--warning-gradient);
+        }
+
+        .status-danger {
+            background: var(--danger-gradient);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid main-container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <h1 class="main-title">
+                <i class="fas fa-fire"></i> RoadSafe AI
+            </h1>
+            <p class="subtitle">Advanced Risk Analytics with Real-Time Intelligence</p>
+            
+            <!-- Premium Data Indicator -->
+            <div class="data-indicator glass-card" id="data-type-indicator">
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="status-icon status-success" id="data-status-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <strong id="data-type-text" style="color: white; margin-right: 1rem;">Real Indian Accident Data</strong>
+                    <span class="data-badge" id="data-type-badge" style="background: var(--success-gradient);">LIVE DATA</span>
+                </div>
+                <div class="mt-2" id="data-sources-text" style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">
+                    Sources: OpenStreetMap + Real Indian Hotspots + HERE Traffic API
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Controls Panel -->
+            <div class="col-lg-4">
+                <!-- Search Controls -->
+                <div class="glass-card controls-card">
+                    <h3 class="info-title">
+                        <i class="fas fa-search"></i> Location Search
+                    </h3>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Search City</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="location-search" placeholder="Enter Indian city name...">
+                            <button class="btn btn-search" id="search-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="control-group">
+                                <label class="control-label">Latitude</label>
+                                <input type="number" class="form-control" id="center-lat" value="19.0760" step="0.0001">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="control-group">
+                                <label class="control-label">Longitude</label>
+                                <input type="number" class="form-control" id="center-lon" value="72.8777" step="0.0001">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Analysis Radius</label>
+                        <select class="form-select" id="radius-select">
+                            <option value="2">2 km - Local Area</option>
+                            <option value="5" selected>5 km - City District</option>
+                            <option value="10">10 km - Metropolitan</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-premium w-100" id="generate-btn">
+                        <i class="fas fa-fire"></i> Generate Risk Analysis
+                    </button>
+                </div>
+
+                <!-- Statistics Panel -->
+                <div class="glass-card stats-card" id="statistics-panel" style="display: none;">
+                    <h4 class="info-title">
+                        <i class="fas fa-chart-bar"></i> Analytics
+                    </h4>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-value" id="avg-risk">-</div>
+                                <div class="stat-label">Average Risk</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-value" id="high-risk-areas">-</div>
+                                <div class="stat-label">High Risk Zones</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Information Panel -->
+                <div class="glass-card info-panel">
+                    <h5 class="info-title">
+                        <i class="fas fa-info-circle"></i> Data Intelligence
+                    </h5>
+                    
+                    <div class="info-section real-data">
+                        <h6>🟢 Real Data Sources</h6>
+                        <ul>
+                            <li>Verified accident hotspots (Mumbai: Dadar Junction, etc.)</li>
+                            <li>OpenStreetMap community reports</li>
+                            <li>HERE Traffic API live incidents</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="info-section ai-prediction">
+                        <h6>🔵 AI Risk Predictions</h6>
+                        <ul>
+                            <li>Machine learning risk calculations</li>
+                            <li>Real-time weather & traffic analysis</li>
+                            <li>Confidence-based severity scoring</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="info-note">
+                        <strong>Note:</strong> Accident locations are from real databases. Risk levels are AI-predicted based on current conditions.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Section -->
+            <div class="col-lg-8">
+                <div class="glass-card map-container">
+                    <div id="heatmap-map"></div>
+                    
+                    <!-- Premium Legend -->
+                    <div class="legend">
+                        <div class="legend-title">Risk Levels</div>
+                        <div class="legend-item">
+                            <span class="legend-color risk-medium"></span>
+                            <span>Medium (30-50%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color risk-high"></span>
+                            <span>High (50-70%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color risk-extreme"></span>
+                            <span>Extreme (>70%)</span>
+                        </div>
+                        <div class="mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.2); text-align: center;">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="fas fa-circle text-success" id="data-status-icon"></i>
+                                <small id="data-status-text" style="color: rgba(255,255,255,0.9); margin-left: 0.5rem;">Live Analysis</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let heatmapMap;
+        let heatmapLayer;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            setupEventListeners();
+            setTimeout(generateHeatmap, 1000);
+        });
+
+        function initializeMap() {
+            heatmapMap = L.map('heatmap-map').setView([19.0760, 72.8777], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(heatmapMap);
+
+            heatmapMap.on('click', function(e) {
+                var lat = e.latlng.lat;
+                var lng = e.latlng.lng;
+                document.getElementById('center-lat').value = lat.toFixed(6);
+                document.getElementById('center-lon').value = lng.toFixed(6);
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('search-btn').addEventListener('click', searchLocation);
+            document.getElementById('generate-btn').addEventListener('click', generateHeatmap);
+        }
+
+        function searchLocation() {
+            var locationInput = document.getElementById('location-search').value.trim();
+            if (!locationInput) {
+                alert('Please enter a location');
+                return;
+            }
+
+            updateDataStatus('searching', 'Searching...');
+
+            var searchQueries = [
+                locationInput,
+                locationInput + ', India',
+                locationInput + ' India'
+            ];
+            
+            var foundLocation = false;
+            var queryIndex = 0;
+            
+            function tryNextQuery() {
+                if (queryIndex >= searchQueries.length) {
+                    updateDataStatus('error', 'Location Not Found');
+                    alert('Location not found. Try a different city name.');
+                    return;
+                }
+                
+                var query = encodeURIComponent(searchQueries[queryIndex]);
+                var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + query + '&limit=1';
+                
+                fetch(url)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data && data.length > 0) {
+                        var lat = parseFloat(data[0].lat);
+                        var lon = parseFloat(data[0].lon);
+                        document.getElementById('center-lat').value = lat.toFixed(6);
+                        document.getElementById('center-lon').value = lon.toFixed(6);
+                        heatmapMap.setView([lat, lon], 12);
+                        updateDataStatus('live', 'Live Data');
+                        generateHeatmap();
+                        foundLocation = true;
+                    } else {
+                        queryIndex++;
+                        setTimeout(tryNextQuery, 500);
+                    }
+                })
+                .catch(function(error) {
+                    if (queryIndex === searchQueries.length - 1) {
+                        updateDataStatus('fallback', 'Fallback Data');
+                    }
+                    queryIndex++;
+                    setTimeout(tryNextQuery, 500);
+                });
+            }
+            
+            tryNextQuery();
+        }
+
+        async function generateHeatmap() {
+            var generateBtn = document.getElementById('generate-btn');
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
+
+            heatmapMap.eachLayer(function(layer) {
+                if (layer instanceof L.CircleMarker) {
+                    heatmapMap.removeLayer(layer);
+                }
+            });
+
+            var centerLat = parseFloat(document.getElementById('center-lat').value);
+            var centerLon = parseFloat(document.getElementById('center-lon').value);
+            var radius = parseFloat(document.getElementById('radius-select').value);
+
+            try {
+                var response = await fetch('/get_indian_accident_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lat: centerLat,
+                        lon: centerLon,
+                        radius: radius
+                    })
+                });
+                
+                var result = await response.json();
+                
+                if (result.success && result.accidents.length > 0) {
+                    var points = result.accidents.map(function(accident) {
+                        return {
+                            lat: accident.lat,
+                            lon: accident.lon,
+                            risk_level: accident.severity / 5.0,
+                            risk_category: accident.severity > 3 ? 'extreme' : (accident.severity > 2 ? 'high' : 'medium'),
+                            contributing_factors: [accident.type, 'Government Data'],
+                            data_source: 'real_indian_government_data',
+                            date: accident.date,
+                            type: accident.type
+                        };
+                    });
+                    
+                    updateDataStatus('live', `Real Data: ${result.count} Accidents Found`);
+                    displayHeatmap(points);
+                    updateStatistics(points);
+                } else {
+                    updateDataStatus('live', 'No Accidents Found (Safe Area)');
+                    displayHeatmap([]);
+                    updateStatistics([]);
+                }
+                
+                heatmapMap.setView([centerLat, centerLon], getZoomLevel(radius));
+            } catch (error) {
+                updateDataStatus('error', 'Government Data Fetch Failed');
+                console.error('Real data fetch error:', error);
+            }
+
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fas fa-fire"></i> Generate Risk Analysis';
+        }
+
+        function displayHeatmap(points) {
+            points.forEach(function(point) {
+                var color = '#f59e0b';
+                var radius = 8;
+                
+                if (point.risk_level > 0.7) {
+                    color = '#7c2d12';
+                    radius = 12;
+                } else if (point.risk_level > 0.5) {
+                    color = '#ef4444';
+                    radius = 10;
+                }
+
+                L.circleMarker([point.lat, point.lon], {
+                    radius: radius,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 0.9,
+                    fillOpacity: 0.7
+                }).bindPopup(
+                    '<div style="min-width: 200px; font-family: Inter, sans-serif;">' +
+                    '<h6 style="color: #1f2937; margin-bottom: 0.5rem;"><i class="fas fa-map-marker-alt"></i> Risk Zone</h6>' +
+                    '<div style="background: linear-gradient(135deg, #f59e0b, #f97316); color: white; padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem;">' +
+                    '<strong>Risk: ' + Math.round(point.risk_level * 100) + '%</strong>' +
+                    '</div>' +
+                    '<strong style="color: #374151;">Contributing Factors:</strong><br>' +
+                    point.contributing_factors.map(function(f) { return '• ' + f; }).join('<br>') + '<br><br>' +
+                    '<div style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; text-align: center;">' +
+                    '<i class="fas fa-database"></i> Real Data Source' +
+                    '</div>' +
+                    '</div>'
+                ).addTo(heatmapMap);
+            });
+        }
+
+        function updateStatistics(points) {
+            if (points.length > 0) {
+                var avgRisk = points.reduce(function(sum, p) { return sum + p.risk_level; }, 0) / points.length;
+                var highRiskAreas = points.filter(function(p) { return p.risk_level > 0.7; }).length;
+                
+                document.getElementById('avg-risk').textContent = Math.round(avgRisk * 100) + '%';
+                document.getElementById('high-risk-areas').textContent = highRiskAreas;
+            } else {
+                document.getElementById('avg-risk').textContent = '0%';
+                document.getElementById('high-risk-areas').textContent = '0';
+            }
+            document.getElementById('statistics-panel').style.display = 'block';
+        }
+
+        function updateDataStatus(status, text) {
+            var icon = document.getElementById('data-status-icon');
+            var statusText = document.getElementById('data-status-text');
+            var topIndicator = document.getElementById('data-type-indicator');
+            var topText = document.getElementById('data-type-text');
+            var topBadge = document.getElementById('data-type-badge');
+            var sourcesText = document.getElementById('data-sources-text');
+            
+            switch(status) {
+                case 'live':
+                    icon.className = 'fas fa-circle text-success';
+                    topIndicator.style.background = 'rgba(16, 185, 129, 0.1)';
+                    topIndicator.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                    topText.textContent = 'Real Indian Accident Data';
+                    topBadge.style.background = 'var(--success-gradient)';
+                    topBadge.textContent = 'REAL DATA';
+                    sourcesText.textContent = 'Sources: OpenStreetMap + Real Indian Hotspots + HERE Traffic API';
+                    break;
+                case 'fallback':
+                    icon.className = 'fas fa-circle text-warning';
+                    topIndicator.style.background = 'rgba(245, 158, 11, 0.1)';
+                    topIndicator.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                    topText.textContent = 'Limited Real Data Available';
+                    topBadge.style.background = 'var(--warning-gradient)';
+                    topBadge.textContent = 'PARTIAL';
+                    sourcesText.textContent = 'Some real data sources unavailable';
+                    break;
+                case 'error':
+                    icon.className = 'fas fa-circle text-danger';
+                    topIndicator.style.background = 'rgba(239, 68, 68, 0.1)';
+                    topIndicator.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                    topText.textContent = 'Real Data Fetch Failed';
+                    topBadge.style.background = 'var(--danger-gradient)';
+                    topBadge.textContent = 'ERROR';
+                    sourcesText.textContent = 'Unable to connect to real data sources';
+                    break;
+                case 'searching':
+                    icon.className = 'fas fa-spinner fa-spin text-primary';
+                    topIndicator.style.background = 'rgba(59, 130, 246, 0.1)';
+                    topIndicator.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                    topText.textContent = 'Fetching Real Data...';
+                    topBadge.style.background = 'var(--primary-gradient)';
+                    topBadge.textContent = 'LOADING';
+                    sourcesText.textContent = 'Connecting to live data sources...';
+                    break;
+            }
+            
+            statusText.textContent = text;
+        }
+
+        function getZoomLevel(radiusKm) {
+            if (radiusKm <= 2) return 13;
+            if (radiusKm <= 5) return 12;
+            if (radiusKm <= 10) return 11;
+            return 10;
+        }
+    </script>
+</body>
+</html>

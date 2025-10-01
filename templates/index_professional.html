@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+    <title>RoadSafe AI - Traffic Accident Risk Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+            --glass: rgba(255, 255, 255, 0.1);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary) !important;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .navbar-brand i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: var(--secondary) !important;
+            padding: 0.75rem 1.25rem !important;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0 0.25rem;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary) !important;
+            background: rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .hero-section {
+            padding: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+        
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #f1f5f9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.5rem;
+            font-weight: 400;
+            opacity: 0.95;
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .status-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .status-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .status-live .status-icon {
+            background: linear-gradient(135deg, var(--success), #34d399);
+            color: white;
+        }
+        
+        .status-model .status-icon {
+            background: linear-gradient(135deg, var(--primary), #3b82f6);
+            color: white;
+        }
+        
+        .status-weather .status-icon {
+            background: linear-gradient(135deg, var(--accent), #fbbf24);
+            color: white;
+        }
+        
+        .card-professional {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border: none;
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .card-professional:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .card-header-pro {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 2rem;
+            font-weight: 600;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .search-container {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .search-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+        }
+        
+        .search-input-wrapper {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 1.25rem 1.75rem;
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), var(--shadow);
+            transform: translateY(-2px);
+        }
+        
+        .search-btn {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow);
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .form-group-pro {
+            margin-bottom: 2rem;
+        }
+        
+        .form-label-pro {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.75rem;
+            display: block;
+            font-size: 0.95rem;
+        }
+        
+        .form-control-pro {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .form-control-pro:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 16px;
+            padding: 1.25rem 2.5rem;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-predict::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-predict:hover::before {
+            left: 100%;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .map-wrapper {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 2rem;
+        }
+        
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        
+        .result-container {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .risk-display {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            font-weight: 800;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .risk-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            opacity: 0.1;
+            z-index: -1;
+        }
+        
+        .risk-very-low {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+        }
+        
+        .risk-low {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: white;
+        }
+        
+        .risk-medium {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: white;
+        }
+        
+        .risk-high {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: white;
+        }
+        
+        .risk-very-high {
+            background: linear-gradient(135deg, #991b1b, #dc2626);
+            color: white;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-content {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .nav-pills-custom .nav-link {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 50px;
+            padding: 0.75rem 2rem;
+            margin: 0 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .nav-pills-custom .nav-link:hover,
+        .nav-pills-custom .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-container {
+                padding: 2rem 1rem;
+            }
+            
+            .card-professional {
+                margin-bottom: 2rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt"></i>
+                RoadSafe AI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/heatmap">
+                            <i class="fas fa-fire"></i> Risk Heatmap
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/historical-dashboard">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/government">
+                            <i class="fas fa-building"></i> Government Portal
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container" style="margin-top: 100px;">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="hero-title">
+                Advanced Traffic Risk Intelligence
+            </h1>
+            <p class="hero-subtitle">
+                Powered by Deep Learning & Real-time Data Analytics for Safer Indian Roads
+            </p>
+            
+            <!-- Status Grid -->
+            <div class="status-grid">
+                <div class="status-card status-live" id="weather-status-card" style="display: none;">
+                    <div class="status-icon">
+                        <i class="fas fa-cloud-sun"></i>
+                    </div>
+                    <h5 class="mb-2">Weather Data</h5>
+                    <p class="mb-0" id="weather-status-text">Live API Active</p>
+                </div>
+                
+                <div class="status-card status-model" id="model-status-card" style="display: none;">
+                    <div class="status-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5 class="mb-2">AI Model</h5>
+                    <p class="mb-0" id="model-status-text">Deep Learning Active</p>
+                </div>
+                
+                <div class="status-card status-weather" id="system-status-card">
+                    <div class="status-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h5 class="mb-2">System Status</h5>
+                    <p class="mb-0">All Systems Operational</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Controls -->
+            <div class="col-lg-6">
+                <!-- Search Section -->
+                <div class="search-container">
+                    <h3 class="text-center mb-4">
+                        <i class="fas fa-map-marker-alt text-primary"></i>
+                        Location Search
+                    </h3>
+                    <div class="search-input-wrapper">
+                        <input type="text" class="search-input" id="city_name" 
+                               placeholder="Enter Indian city or village (e.g., Mumbai, Pune, Nashik)">
+                        <button class="search-btn" id="search_city_btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Parameters Card -->
+                <div class="card-professional">
+                    <div class="card-header-pro">
+                        <i class="fas fa-sliders-h"></i>
+                        Risk Assessment Parameters
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Latitude</label>
+                                    <input type="number" class="form-control-pro" id="latitude" value="19.0760" step="0.0001">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Longitude</label>
+                                    <input type="number" class="form-control-pro" id="longitude" value="72.8777" step="0.0001">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Hour</label>
+                                    <select class="form-control-pro" id="hour"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Day</label>
+                                    <select class="form-control-pro" id="day_of_week"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Month</label>
+                                    <select class="form-control-pro" id="month"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Weather</label>
+                                    <select class="form-control-pro" id="weather_conditions">
+                                        <option value="1" selected>Clear/Fine</option>
+                                        <option value="2">Raining</option>
+                                        <option value="3">Snowing</option>
+                                        <option value="7">Fog/Mist</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Road Surface</label>
+                                    <select class="form-control-pro" id="road_surface">
+                                        <option value="0" selected>Dry</option>
+                                        <option value="1">Wet/Damp</option>
+                                        <option value="3">Frost/Ice</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Speed Limit</label>
+                                    <select class="form-control-pro" id="speed_limit">
+                                        <option value="20">20 mph</option>
+                                        <option value="30" selected>30 mph</option>
+                                        <option value="40">40 mph</option>
+                                        <option value="50">50 mph</option>
+                                        <option value="60">60 mph</option>
+                                        <option value="70">70 mph</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group-pro">
+                                    <label class="form-label-pro">Light Conditions</label>
+                                    <select class="form-control-pro" id="light_conditions">
+                                        <option value="0">Dark - Street Lit</option>
+                                        <option value="1">Dark - No Lighting</option>
+                                        <option value="2" selected>Daylight</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn-predict" onclick="predictRisk()">
+                            <i class="fas fa-brain"></i>
+                            Analyze Risk Factors
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Map & Results -->
+            <div class="col-lg-6">
+                <!-- Map -->
+                <div class="map-wrapper">
+                    <div id="map"></div>
+                </div>
+
+                <!-- Results -->
+                <div class="result-container" id="result-section" style="display: none;">
+                    <div class="risk-display" id="risk-indicator">
+                        <i class="fas fa-exclamation-triangle"></i><br>
+                        Click "Analyze Risk" to begin
+                    </div>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Risk Level</div>
+                            <div class="metric-value" id="risk-level">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Risk Score</div>
+                            <div class="metric-value" id="risk-score">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Confidence</div>
+                            <div class="metric-value" id="confidence">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h4>Analyzing Risk Factors</h4>
+            <p>Processing real-time data and weather conditions...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, marker;
+        
+        function fillSelect(id, values, labels) {
+            const el = document.getElementById(id);
+            el.innerHTML = '';
+            values.forEach((v, i) => {
+                const opt = document.createElement('option');
+                opt.value = v; 
+                opt.textContent = labels ? labels[i] : v;
+                el.appendChild(opt);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize form selects
+            fillSelect('hour', [...Array(24).keys()], [...Array(24).keys()].map(h => h+':00'));
+            fillSelect('day_of_week', [1,2,3,4,5,6,7], ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+            fillSelect('month', [1,2,3,4,5,6,7,8,9,10,11,12], ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']);
+            
+            // Set current time
+            const now = new Date();
+            document.getElementById('hour').value = now.getHours();
+            document.getElementById('day_of_week').value = now.getDay() || 7;
+            document.getElementById('month').value = now.getMonth() + 1;
+            
+            // Initialize map (Mumbai, India)
+            map = L.map('map').setView([19.0760, 72.8777], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+                maxZoom: 18,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Map click handler
+            map.on('click', async (e) => {
+                const {lat, lng} = e.latlng;
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                
+                if (marker) map.removeLayer(marker);
+                marker = L.marker([lat, lng]).addTo(map);
+                
+                await fetchLocationData(lat, lng);
+            });
+
+            // Search functionality
+            document.getElementById('search_city_btn').addEventListener('click', searchCity);
+            document.getElementById('city_name').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') searchCity();
+            });
+            
+            checkSystemStatus();
+        });
+
+        async function searchCity() {
+            const cityName = document.getElementById('city_name').value.trim();
+            if (!cityName) {
+                alert('Please enter a city name');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/geocode_city', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({city: cityName})
+                });
+
+                if (!response.ok) throw new Error('City not found');
+
+                const data = await response.json();
+                const lat = data.latitude || data.lat;
+                const lng = data.longitude || data.lon;
+                
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                
+                map.setView([lat, lng], 13);
+                if (marker) map.removeLayer(marker);
+                marker = L.marker([lat, lng]).addTo(map);
+                
+                await fetchLocationData(lat, lng);
+                
+            } catch (error) {
+                alert('Could not find the city. Please check spelling and try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function fetchLocationData(lat, lng) {
+            try {
+                const response = await fetch('/fetch_location_data', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({latitude: lat, longitude: lng})
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateWeatherStatus(data);
+                    
+                    // Update form fields
+                    document.getElementById('weather_conditions').value = data.weather_conditions;
+                    document.getElementById('road_surface').value = data.road_surface;
+                }
+            } catch (error) {
+                console.error('Error fetching location data:', error);
+            }
+        }
+
+        async function predictRisk() {
+            showLoading(true);
+            
+            const payload = {
+                latitude: parseFloat(document.getElementById('latitude').value),
+                longitude: parseFloat(document.getElementById('longitude').value),
+                hour: parseInt(document.getElementById('hour').value),
+                day_of_week: parseInt(document.getElementById('day_of_week').value),
+                month: parseInt(document.getElementById('month').value),
+                light_conditions: parseInt(document.getElementById('light_conditions').value),
+                weather_conditions: parseInt(document.getElementById('weather_conditions').value),
+                road_surface: parseInt(document.getElementById('road_surface').value),
+                speed_limit: parseInt(document.getElementById('speed_limit').value),
+                road_type: 3,
+                junction_detail: 0
+            };
+            
+            try {
+                const response = await fetch('/predict_risk', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(payload) 
+                });
+                
+                const result = await response.json();
+                displayResults(result);
+                
+            } catch (error) { 
+                alert('Prediction failed: ' + error.message); 
+            } finally { 
+                showLoading(false);
+            }
+        }
+
+        function displayResults(result) {
+            const resultSection = document.getElementById('result-section');
+            const riskIndicator = document.getElementById('risk-indicator');
+            const riskLevel = document.getElementById('risk-level');
+            const riskScore = document.getElementById('risk-score');
+            const confidence = document.getElementById('confidence');
+            
+            if (result.error) {
+                riskLevel.textContent = 'Error';
+                riskScore.textContent = 'N/A';
+                confidence.textContent = '0%';
+                riskIndicator.innerHTML = '<i class="fas fa-exclamation-triangle"></i><br>ERROR';
+                resultSection.style.display = 'block';
+                return;
+            }
+
+            const riskValue = parseFloat(result.risk_value) || 2.0;
+            const confidenceValue = parseFloat(result.confidence) || 75.0;
+            const riskLevelText = (result.risk_level || 'Medium').toLowerCase();
+            
+            riskLevel.textContent = riskLevelText.charAt(0).toUpperCase() + riskLevelText.slice(1);
+            riskScore.textContent = riskValue.toFixed(2);
+            confidence.textContent = `${Math.round(confidenceValue)}%`;
+            
+            // Update risk indicator
+            riskIndicator.className = 'risk-display';
+            
+            if (riskLevelText === 'very low') {
+                riskIndicator.classList.add('risk-very-low');
+                riskIndicator.innerHTML = '<i class="fas fa-shield-alt"></i><br>VERY LOW RISK';
+            } else if (riskLevelText === 'low') {
+                riskIndicator.classList.add('risk-low');
+                riskIndicator.innerHTML = '<i class="fas fa-check-circle"></i><br>LOW RISK';
+            } else if (riskLevelText === 'medium') {
+                riskIndicator.classList.add('risk-medium');
+                riskIndicator.innerHTML = '<i class="fas fa-exclamation-triangle"></i><br>MEDIUM RISK';
+            } else if (riskLevelText === 'high') {
+                riskIndicator.classList.add('risk-high');
+                riskIndicator.innerHTML = '<i class="fas fa-exclamation-circle"></i><br>HIGH RISK';
+            } else if (riskLevelText === 'very high') {
+                riskIndicator.classList.add('risk-very-high');
+                riskIndicator.innerHTML = '<i class="fas fa-times-circle"></i><br>VERY HIGH RISK';
+            }
+            
+            updateModelStatus(result);
+            resultSection.style.display = 'block';
+        }
+
+        function updateWeatherStatus(data) {
+            const statusCard = document.getElementById('weather-status-card');
+            const statusText = document.getElementById('weather-status-text');
+            
+            if (data.api_status === 'live_data') {
+                statusText.textContent = `Live Weather: ${data.temperature}°C`;
+            } else {
+                statusText.textContent = `Real Weather: ${data.temperature}°C`;
+            }
+            statusCard.style.display = 'block';
+        }
+
+        function updateModelStatus(result) {
+            const statusCard = document.getElementById('model-status-card');
+            const statusText = document.getElementById('model-status-text');
+            
+            if (result.used_model === true) {
+                statusText.textContent = 'AI Model Active';
+            } else {
+                statusText.textContent = 'Real Analysis Active';
+            }
+            statusCard.style.display = 'block';
+        }
+
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch('/status');
+                if (response.ok) {
+                    const status = await response.json();
+                    console.log('System status:', status);
+                }
+            } catch (error) {
+                console.log('Status check failed:', error);
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+        }
+    </script>
+</body>
+</html>

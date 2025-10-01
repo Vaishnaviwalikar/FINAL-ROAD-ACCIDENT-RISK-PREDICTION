@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: road-accident-prediction
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: TOMTOM_API_KEY
+        sync: false
+      - key: ROAD_ACCIDENT_INDIA_API_KEY
+        sync: false

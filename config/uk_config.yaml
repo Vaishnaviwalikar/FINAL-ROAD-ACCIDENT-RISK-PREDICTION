@@ -1,0 +1,67 @@
+dataset: UK
+raw_dir: data/raw/uk
+processed_dir: data/processed/uk
+seed: 42
+
+datetime_columns:
+  accident_date: "Date"
+  accident_time: "Time"
+
+merge:
+  left: "Accident_Information.csv"
+  right: "Vehicle_Information.csv"
+  on: "Accident_Index"
+
+missing_threshold: 0.10
+near_zero_var_threshold: 0.02
+
+categorical_impute: mode
+encode: label
+
+# 32 indicators from Table 1 (UK)
+selected_features:
+  # Temporal (4)
+  - year
+  - month
+  - Day_of_Week
+  - hour
+  # Spatial (2 + 3 + 1 + 1)
+  - Latitude
+  - Longitude
+  - Junction_Control
+  - Junction_Detail
+  - Junction_Location
+  - Number_of_Vehicles
+  - Pedestrian_Crossing-Physical_Facilities
+  # Environmental (8)
+  - Light_Conditions
+  - Weather_Conditions
+  - Urban_or_Rural_Area
+  - Special_Conditions_at_Site
+  - Carriageway_Hazards
+  - Road_Type
+  - Road_Surface_Conditions
+  - Speed_limit
+  # Vehicle factors (8)
+  - Propulsion_Code
+  - Age_of_Vehicle
+  - Engine_Capacity_(CC)
+  - Towing_and_Articulation
+  - Skidding_and_Overturning
+  - Vehicle_Manoeuvre
+  - Vehicle_Type
+  - Vehicle_Reference
+  # Driver factors (5)
+  - Age_Band_of_Driver
+  - Driver_Home_Area_Type
+  - Journey_Purpose_of_Driver
+  - Sex_of_Driver
+  - Was_Vehicle_Left_Hand_Drive
+
+segment_id_col: "Road_Segment_Id"
+period: {unit: "week"}
+
+split:
+  strategy: chronological
+  ratios: {train: 0.6, val: 0.2, test: 0.2}
+  folds: 10
