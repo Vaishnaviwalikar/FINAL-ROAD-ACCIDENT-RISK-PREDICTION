@@ -11,9 +11,9 @@ Showcase interface for the IEEE Access paper implementation
 import os
 import io
 import json
-import numpy as np
-import pandas as pd
-import torch
+# import numpy as np
+# import pandas as pd
+# import torch
 import requests
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 from werkzeug.utils import secure_filename
@@ -29,8 +29,8 @@ os.environ['OPENWEATHER_API_KEY'] = get_openweather_api_key()
 
 # Import our model and preprocessing
 from src.model import CNNBiLSTMAttn, SimplifiedRiskModel
-from joblib import load as joblib_load
-import shap
+# from joblib import load as joblib_load
+# import shap
 
 # Import traffic API
 from src.traffic_api import traffic_bp
