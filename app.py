@@ -28,7 +28,7 @@ from config_api import get_openweather_api_key, is_demo_mode, WEATHER_CONDITIONS
 os.environ['OPENWEATHER_API_KEY'] = get_openweather_api_key()
 
 # Import our model and preprocessing
-from src.model import CNNBiLSTMAttn, SimplifiedRiskModel
+# from src.model import CNNBiLSTMAttn, SimplifiedRiskModel
 # from joblib import load as joblib_load
 # import shap
 
