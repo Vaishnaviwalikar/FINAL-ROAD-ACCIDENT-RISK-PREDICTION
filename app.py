@@ -255,37 +255,37 @@ def load_model_and_preprocessing():
         a_config = {"data": {"sequence_length": 24}}
 
 
-def _encode_categoricals(df: pd.DataFrame) -> pd.DataFrame:
-    global a_label_encoders
-    if not a_label_encoders:
-        return df
-    out = df.copy()
-    for col, enc in a_label_encoders.items():
-        if col in out.columns:
-            try:
-                classes = list(enc.classes_)
-                out[col] = out[col].astype(str).apply(lambda v: v if v in classes else classes[0])
-                out[col] = enc.transform(out[col].astype(str))
-            except Exception:
-                out[col] = pd.to_numeric(out[col], errors='coerce').fillna(0).astype(int)
-    return out
+# def _encode_categoricals(df: pd.DataFrame) -> pd.DataFrame:
+#     global a_label_encoders
+#     if not a_label_encoders:
+#         return df
+#     out = df.copy()
+#     for col, enc in a_label_encoders.items():
+#         if col in out.columns:
+#             try:
+#                 classes = list(enc.classes_)
+#                 out[col] = out[col].astype(str).apply(lambda v: v if v in classes else classes[0])
+#                 out[col] = enc.transform(out[col].astype(str))
+#             except Exception:
+#                 out[col] = pd.to_numeric(out[col], errors='coerce').fillna(0).astype(int)
+#     return out
 
 
-def _apply_scaler(df: pd.DataFrame) -> pd.DataFrame:
-    global a_scaler
-    if not a_scaler:
-        return df
-    out = df.copy()
-    features = a_scaler.get("features", [])
-    means = a_scaler.get("mean", {})
-    stds = a_scaler.get("std", {})
-    for c in features:
-        if c in out.columns:
-            mu = means.get(c, 0.0)
-            sd = stds.get(c, 1.0) or 1.0
-            out[c] = pd.to_numeric(out[c], errors='coerce').fillna(mu)
-            out[c] = (out[c] - mu) / sd
-    return out
+# def _apply_scaler(df: pd.DataFrame) -> pd.DataFrame:
+#     global a_scaler
+#     if not a_scaler:
+#         return df
+#     out = df.copy()
+#     features = a_scaler.get("features", [])
+#     means = a_scaler.get("mean", {})
+#     stds = a_scaler.get("std", {})
+#     for c in features:
+#         if c in out.columns:
+#             mu = means.get(c, 0.0)
+#             sd = stds.get(c, 1.0) or 1.0
+#             out[c] = pd.to_numeric(out[c], errors='coerce').fillna(mu)
+#             out[c] = (out[c] - mu) / sd
+#     return out
 
 
 def _derive_time_fields(payload: dict) -> dict:
@@ -294,8 +294,9 @@ def _derive_time_fields(payload: dict) -> dict:
     ts = payload.get('timestamp')
     if ts:
         try:
-            dt = pd.to_datetime(ts, errors='coerce')
-            if pd.notna(dt):
+            from datetime import datetime
+            dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+            if dt:
                 out.setdefault('month', int(dt.month))
                 out.setdefault('week', int(dt.isocalendar().week))
                 # Monday=1..Sunday=7
